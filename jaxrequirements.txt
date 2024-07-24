@@ -1,0 +1,6 @@
+numpy
+absl-py
+jax 
+jaxlib
+scipy
+pyflann
