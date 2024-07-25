@@ -130,23 +130,33 @@ def main(_):
     optimizer = optax.sgd(learning_rate)
     opt_state = optimizer.init(params)
 
-    # Training loop
+     # Training loop
     for step in range(FLAGS.training_steps):
         step_images, step_labels = next(batches)
         step_images = jnp.array(step_images).reshape((-1, 28, 28, 1))
         step_labels = jnp.array(step_labels).reshape(-1)
-        step_labels = jax.nn.one_hot(jnp.array(step_labels), 10)
+        step_labels_one_hot = jax.nn.one_hot(jnp.array(step_labels), 10)
 
-        params, opt_state, loss, (logits, bad_softmax, bad_cross_entropies) = train_step(params, opt_state, step_images, step_labels)
+        params, opt_state, loss, (logits, bad_softmax, bad_cross_entropies) = train_step(params, opt_state, step_images, step_labels_one_hot)
 
         if step % 1000 == 0:
-            accuracy = compute_accuracy(params, step_images, step_labels)
+            accuracy = compute_accuracy(params, step_images, step_labels_one_hot)
             print(f"step: {step}, loss: {loss}, accuracy: {accuracy}")
 
-            # Save checkpoint
+            # Save checkpoint with additional information
             os.makedirs(FLAGS.checkpoint_dir, exist_ok=True)
+            checkpoint_data = {
+                'params': params,
+                'input_tensors': {'images': step_images.shape, 'labels': step_labels.shape},
+                'coverage_tensors': {'logits': logits.shape},
+                'metadata_tensors': {
+                    'bad_softmax': bad_softmax.shape,
+                    'bad_cross_entropies': bad_cross_entropies.shape,
+                    'logits': logits.shape
+                }
+            }
             with open(os.path.join(FLAGS.checkpoint_dir, f"checkpoint_{step}.npz"), 'wb') as f:
-                np.savez(f, params=params)
+                np.savez(f, **checkpoint_data)
 
     print("Training completed.")
 

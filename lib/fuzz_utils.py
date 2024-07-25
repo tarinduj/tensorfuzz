@@ -180,6 +180,9 @@ def fetch_function(
     idx = len(coverage_tensors)
     coverage_batches = fetched_data[:idx]
     metadata_batches = fetched_data[idx:]
+    print("input batches shape: ", len(input_batches), input_batches[0].shape)
+    print("coverage batches shape: ", len(coverage_batches), coverage_batches[0].shape)
+    print("metadata batches shape: ", len(metadata_batches), metadata_batches[0].shape)
     return coverage_batches, metadata_batches
 
 

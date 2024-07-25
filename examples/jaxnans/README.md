@@ -11,5 +11,5 @@ python examples/jaxnans/nan_model.py --checkpoint_dir=/tmp/jaxnanfuzzer --data_d
 Then you can fuzz this model by pointing the fuzzer at its checkpoints.
 
 ```
-python examples/nans/nan_fuzzer.py --checkpoint_dir=/tmp/nanfuzzer --total_inputs_to_fuzz=1000000 --mutations_per_corpus_item=100 --alsologtostderr --ann_threshold=0.5
+python examples/jaxnans/nan_fuzzer.py --checkpoint_dir=/tmp/jaxnanfuzzer --total_inputs_to_fuzz=1000000 --mutations_per_corpus_item=100 --alsologtostderr --ann_threshold=0.5
 ```

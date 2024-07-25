@@ -82,6 +82,9 @@ def main(_):
     image, label = fuzz_utils.basic_mnist_input_corpus(
         choose_randomly=FLAGS.random_seed_corpus
     )
+    print("image type: ", type(image), image.shape)
+    print("label type: ", type(label), label.shape)
+
     numpy_arrays = [[image, label]]
 
     with tf.Session() as sess:
@@ -91,6 +94,28 @@ def main(_):
         )
 
         fetch_function = fuzz_utils.build_fetch_function(sess, tensor_map)
+
+        # Test the fetch function
+        print ("Testing fetch function...")
+        test_image = np.ones((2, 28, 28, 1))  # Create a dummy image batch of all ones with batch size 2
+        test_label = np.array([5, 3])
+        test_input_batches = [test_image, test_label]
+
+        coverage_batches, metadata_batches = fetch_function(test_input_batches)
+
+        print("Coverage batches:", type(coverage_batches))
+        print ("Coverage batches:")
+        for i, batch in enumerate(coverage_batches):
+            print( "  Batch %d shape: %s %s" % (i, batch.shape, type(batch)))
+            print ("  Batch %d min: %s, max: %s" % (i, batch.min(), batch.max()))
+
+        print("Metadata batches:", type(metadata_batches))
+        print ("Metadata batches:")
+        for i, batch in enumerate(metadata_batches):
+            print ("  Batch %d shape: %s %s" % (i, batch.shape, type(batch)))
+            print ("  Batch %d min: %s, max: %s" % (i, batch.min(), batch.max()))
+
+        exit(0)
 
         size = FLAGS.mutations_per_corpus_item
         mutation_function = lambda elt: do_basic_mutations(elt, size)
