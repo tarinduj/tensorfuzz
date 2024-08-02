@@ -22,12 +22,51 @@ def objective_function(corpus_element):
     print("Objective function satisfied: non-finite element found.")
     return True
 
+def print_structure(obj, indent=0):
+    """
+    Recursively print the type structure of a data structure.
+    
+    Args:
+    obj: The object to inspect
+    indent: The current indentation level (used for recursive calls)
+    
+    Returns:
+    None (prints to stdout)
+    """
+    indent_str = "  " * indent
+    obj_type = type(obj).__name__
+
+    if isinstance(obj, (dict, jax.tree_util.PyTreeDef)):
+        print(f"{indent_str}{obj_type}:")
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                print(f"{indent_str}  {key}:")
+                print_structure(value, indent + 2)
+        else:  # PyTreeDef
+            for key in obj.keys():
+                print(f"{indent_str}  {key}:")
+                print_structure(getattr(obj, key), indent + 2)
+    elif isinstance(obj, (list, tuple)):
+        print(f"{indent_str}{obj_type} of length {len(obj)}:")
+        if len(obj) > 0:
+            print_structure(obj[0], indent + 1)
+        if len(obj) > 1:
+            print(f"{indent_str}  ...")
+    elif isinstance(obj, (np.ndarray, jnp.ndarray)):
+        print(f"{indent_str}{obj_type} shape: {obj.shape}, dtype: {obj.dtype}")
+    else:
+        print(f"{indent_str}{obj_type}")
+
 def metadata_function(metadata_batches):
     """Gets the metadata."""
+    # print("metadata_batches:")
+    # print_structure(metadata_batches)
     metadata_list = [
-        [metadata_batches[i][j] for i in range(len(metadata_batches))]
-        for j in range(metadata_batches[0].shape[0])
+        [metadata_batches[i].ravel() for i in range(len(metadata_batches))]
     ]
+    # print("metadata_list:")
+    # print_structure(metadata_list)
+    # exit(0)
     return metadata_list
 
 def coverage_function(coverage_batches):
@@ -43,12 +82,25 @@ def coverage_function(coverage_batches):
         logits.
     """
     coverage_batch = coverage_batches[0]
-    coverage_list = []
-    for idx in range(coverage_batch.shape[0]):
-        elt = coverage_batch[idx]
-        elt = np.expand_dims(np.sum(np.abs(elt)), 0)
-        coverage_list.append(elt)
+    
+    # # Sum up all absolute values in the entire sequence
+    # total_sum = np.sum(np.abs(coverage_batch))
+    
+    # # Create a list with a single element
+    # coverage_list = [np.array([total_sum])]
+
+     # Calculate the sum of absolute values for each row
+    coverage_array = np.sum(np.abs(coverage_batch), axis=1)
+    
+    coverage_list = [coverage_array]
+    
     return coverage_list
+
+def flatten_params(params):
+    """Flatten a nested dictionary of parameters into a single 2D array with shape (n, 1)."""
+    flat_params, tree_def = jax.tree_util.tree_flatten(params)
+    concatenated = np.concatenate([p.ravel() for p in flat_params])
+    return concatenated.reshape(-1, 1), tree_def
 
 def build_fetch_function():
     """Constructs fetch function (same as a train step)"""
